@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PWMVictorSPX;
 
+import java.util.DoubleSummaryStatistics;
 
 import edu.wpi.first.wpilibj.AnalogGyro;
 
@@ -42,6 +43,8 @@ public class Robot extends TimedRobot {
 
   // NPM ports 2,3 are used for controlling motors
   private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
+  // private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(0), new PWMVictorSPX(1));
+
   private final Timer timer = new Timer();
   private final Joystick stick = new Joystick(0);
   private final Encoder encoder = new Encoder(0, 1);
@@ -67,7 +70,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     // System.out.println(encoder.getDistance());
-    System.out.println(gyro.getAngle());
+    System.out.println("angle is " + gyro.getAngle() + "\tt=" + timer.get());
   }
 
   /**
@@ -90,55 +93,105 @@ public class Robot extends TimedRobot {
     timer.start();
   }
 
-  /** This function is called periodically during autonomous. */
-  @Override   
-  public void autonomousPeriodic() {
+  private void driveDumb(){
+    if (timer.get() < 10){
+      drive.tankDrive(0.8, 0.8);
+    } else{
+      drive.stopMotor();
+    }
+  }
 
-    // // double speed = 0.6;
-    // System.out.println(timer.get());
-    // if (true) {
-    //   drive.tankDrive(0.8, 0.4); // drive forwards half speed
-    // }
-    // // } else {
-    // //   drive.stopMotor(); // stop robot
-    // // }
+  private void driveStraight(){
+    double time = timer.get();
+    if (time < 5){
+      drive.stopMotor();
+      
+    }else if(time < 40){
+      double error = 5; 
+
+
+      double angle = gyro.getAngle();  
+      if (angle < -error){
+        // turn left
+        drive.tankDrive(0.55, 0.75);
+        System.out.println("turning left to correct");
+
+
+      }else if (angle > +error){
+        // turn right
+        drive.tankDrive(0.75, 0.55);
+        System.out.println("turning right to correct");
+
+      }
+
+      drive.tankDrive(0.6, 0.6);
+    }else{
+      drive.stopMotor();
+    }
+  }
+
+  private void followAngle(){
+    // uses pid to keep robot on an angle
 
     double time = timer.get();
     if (time < 5){
       drive.stopMotor();
-      System.out.println("Inititating Gyro");
-    }else if(time < 8){
-      double error = 5; 
-
+      
+    }else if(time < 40){
       double angle = gyro.getAngle();
-      if (angle < -error){
-        // turn left
-        drive.tankDrive(0.6, 0.4);
-      }else if (angle > +error){
-        // turn right
-        drive.tankDrive(0.4, 0.6);
-      }
+      double target = 90;
+      double tolerance = 5; // 5 degrees error allowed
+      double error = target-angle;
 
-      drive.tankDrive(0.5, 0.5);
+      // p control
+      double p_const = 0.8;
+      double p_val = error/180.0;
+
+
+      
+
+
     }else{
       drive.stopMotor();
     }
+  }
 
+  private void robotSpin(){
+    double time = timer.get();
+    if (time < 15){
+      drive.tankDrive(0.6,-0.6);
 
+    }else{
+      drive.stopMotor();
+    }
+  }
+
+  /** This function is called periodically during autonomous. */
+  @Override   
+  public void autonomousPeriodic() {
+    // followAngle();
+    // robotSpin();
+    driveDumb();
   }
 
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {}   
+  
 
   /** This function is called periodically during operator control. */
+  double forwardSpeed = 0;
   @Override
   public void teleopPeriodic() {
-    // double forwardSpeed = stick.getY(); 
-    // double turnSpeed = stick.getX();
-    // drive.arcadeDrive(forwardSpeed, turnSpeed);
+    double turnSpeed = stick.getX();
     
 
+    double targetSpeed = stick.getY();
+    forwardSpeed = (targetSpeed + forwardSpeed*30.0)/31.0;
+    if (Math.abs(forwardSpeed) > 0.4)
+    drive.arcadeDrive(forwardSpeed, 0.5*turnSpeed);
+    
+  
 
   }
 
