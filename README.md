@@ -25,4 +25,8 @@ Encoder on left side of drive train (from forward perspective, you see robot's b
 --- 
 ## Trapezoid Bot 
 
+### Motors
+Motors connected by CAN bus.
+
+
 ... To be documented.
