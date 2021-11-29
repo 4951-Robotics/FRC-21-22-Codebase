@@ -4,6 +4,11 @@
 
 package frc.robot;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -15,7 +20,9 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 // import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 // import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.PWMVictorSPX;
+import edu.wpi.first.wpilibj.PWMTalonSRX;
 
 import java.util.DoubleSummaryStatistics;
 
@@ -41,13 +48,17 @@ public class Robot extends TimedRobot {
    */
 
 
+   //victorsp 0, 3 not working
+   //PWM 0, 3 not working\
+   //Talon 0, 3 not working
+
   // NPM ports 2,3 are used for controlling motors
-  private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
-  // private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(0), new PWMVictorSPX(1));
+  private DifferentialDrive drive = new DifferentialDrive(new PWMTalonSRX(0), new PWMTalonSRX(3));
+  // private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
 
   private final Timer timer = new Timer();
   private final Joystick stick = new Joystick(0);
-  private final Encoder encoder = new Encoder(0, 1);
+  // private final Encoder encoder = new Encoder(0, 1);
   
   private AnalogGyro gyro = new AnalogGyro(0);
 
@@ -70,7 +81,8 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     // System.out.println(encoder.getDistance());
-    System.out.println("angle is " + gyro.getAngle() + "\tt=" + timer.get());
+    // System.out.println("angle is " + gyro.getAngle() + "\tt=" + timer.get());
+    // System.out.println(gyro.getAngle() + ",");
   }
 
   /**
@@ -91,11 +103,14 @@ public class Robot extends TimedRobot {
 
     timer.reset();
     timer.start();
+
   }
+
+
 
   private void driveDumb(){
     if (timer.get() < 10){
-      drive.tankDrive(0.8, 0.8);
+      drive.tankDrive(0.5, 0.5);
     } else{
       drive.stopMotor();
     }
@@ -103,32 +118,20 @@ public class Robot extends TimedRobot {
 
   private void driveStraight(){
     double time = timer.get();
-    if (time < 5){
+    if (time < 1){
       drive.stopMotor();
       
     }else if(time < 40){
-      double error = 5; 
+      double power = 0.7;
+      double turn_power = -0.08 * gyro.getAngle();
 
 
-      double angle = gyro.getAngle();  
-      if (angle < -error){
-        // turn left
-        drive.tankDrive(0.55, 0.75);
-        System.out.println("turning left to correct");
-
-
-      }else if (angle > +error){
-        // turn right
-        drive.tankDrive(0.75, 0.55);
-        System.out.println("turning right to correct");
-
-      }
-
-      drive.tankDrive(0.6, 0.6);
+      drive.arcadeDrive(power, turn_power, true);
     }else{
       drive.stopMotor();
     }
   }
+
 
   private void followAngle(){
     // uses pid to keep robot on an angle
@@ -138,15 +141,16 @@ public class Robot extends TimedRobot {
       drive.stopMotor();
       
     }else if(time < 40){
+      double P = 0.5; double I = 0.5; double D = 0.5;
+
       double angle = gyro.getAngle();
       double target = 90;
-      double tolerance = 5; // 5 degrees error allowed
-      double error = target-angle;
-
-      // p control
-      double p_const = 0.8;
-      double p_val = error/180.0;
-
+      double error =  target-angle;
+      
+      // double integral += (error*.02); // Integral is increased by the error*time (which is .02 seconds using normal IterativeRobot)
+      // double derivative = (error - ) / .02;
+      
+      // double motors = P*error + I*this.integral + D*derivative;
 
       
 
@@ -166,13 +170,39 @@ public class Robot extends TimedRobot {
     }
   }
 
+  private void driveTest(){
+    double time = timer.get();
+    if (time < 1){
+      drive.stopMotor();
+      
+    }else if(time < 40){
+      double speed = 0.6;
+      double allowed_error = 3.0;
+      double angle = gyro.getAngle();
+
+      double turn_power = 0;
+
+      if(angle > allowed_error || angle < -allowed_error){
+        // System.out.println("ok outside range, setting to not 0");
+        turn_power = -0.15 * angle;
+      }
+
+      // drive.arcadeDrive(speed, turn_power, true);
+    }else{
+      drive.stopMotor();
+    }
+  }
+
   /** This function is called periodically during autonomous. */
-  @Override   
-  public void autonomousPeriodic() {
+  @Override
+  public void autonomousPeriodic() { // negative turns left, -angle = left
     // followAngle();
     // robotSpin();
     driveDumb();
+    // driveStraight();
+    // driveTest();
   }
+
 
   /** This function is called once when teleop is enabled. */
   @Override
@@ -183,13 +213,17 @@ public class Robot extends TimedRobot {
   double forwardSpeed = 0;
   @Override
   public void teleopPeriodic() {
-    double turnSpeed = stick.getX();
-    
+    System.out.println("manual control");
 
+
+    double turnSpeed = stick.getX();
     double targetSpeed = stick.getY();
-    forwardSpeed = (targetSpeed + forwardSpeed*30.0)/31.0;
-    if (Math.abs(forwardSpeed) > 0.4)
-    drive.arcadeDrive(forwardSpeed, 0.5*turnSpeed);
+
+    drive.arcadeDrive(targetSpeed, 0.5*turnSpeed);
+    
+    // forwardSpeed = (targetSpeed + forwardSpeed*30.0)/31.0;
+    // if (Math.abs(forwardSpeed) > 0.4)
+    // drive.arcadeDrive(forwardSpeed, 0.5*turnSpeed);
     
   
 
@@ -201,7 +235,33 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {}
+  public void disabledPeriodic() {
+
+    // try {
+    //   //  
+
+    //   FileWriter logwriter = new FileWriter("testfile.txt");
+    //   logwriter.append(timer.get() + " " + gyro.getAngle());
+    //   logwriter.close();
+
+
+    // } catch (IOException e){
+    //   System.out.println("problem");
+    //   e.printStackTrace();
+    // }
+
+    // try{
+    //   BufferedWriter writer = new BufferedWriter(
+    //     new FileWriter("C:\\Users\\Henry\\RobotRepo\\Alpha\\src\\main\\java\\frc\\robot\\Robot.java\\testfile.txt"));
+    //   writer.write(timer.get() + " " + gyro.getAngle() + "\n");
+    //   writer.close();
+    // } catch (IOException e){
+    //   System.out.println("PROBLEM PROBLEM NOT GOOD");
+    //   e.printStackTrace();
+    // }
+    
+    // System.out.println(gyro.getAngle());
+  }
 
   /** This function is called once when test mode is enabled. */
   @Override
