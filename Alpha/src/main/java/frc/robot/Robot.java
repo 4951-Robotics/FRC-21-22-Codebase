@@ -26,6 +26,8 @@ import edu.wpi.first.wpilibj.PWMTalonSRX;
 
 import java.util.DoubleSummaryStatistics;
 
+import javax.swing.plaf.TreeUI;
+
 import edu.wpi.first.wpilibj.AnalogGyro;
 
 import edu.wpi.first.wpilibj.Encoder;
@@ -53,8 +55,8 @@ public class Robot extends TimedRobot {
    //Talon 0, 3 not working
 
   // NPM ports 2,3 are used for controlling motors
-  private DifferentialDrive drive = new DifferentialDrive(new PWMTalonSRX(0), new PWMTalonSRX(3));
-  // private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
+  //private DifferentialDrive drive = new DifferentialDrive(new PWMTalonSRX(0), new PWMTalonSRX(3));
+  private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
 
   private final Timer timer = new Timer();
   private final Joystick stick = new Joystick(0);
@@ -211,15 +213,35 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   double forwardSpeed = 0;
+  boolean mode = false;
   @Override
   public void teleopPeriodic() {
-    System.out.println("manual control");
+    //System.out.println("manual control");
 
 
     double turnSpeed = stick.getX();
     double targetSpeed = stick.getY();
+  
+    System.out.println(mode);
+    if(stick.getRawButton(2)) //B on controller
+    {
+      mode = true;
+    }
+    if(stick.getRawButton(2) && mode == true)
+    {
+      mode = false;
+    }
 
-    drive.arcadeDrive(targetSpeed, 0.5*turnSpeed);
+    if(mode)
+    {
+      drive.arcadeDrive(2*targetSpeed, 0.5*turnSpeed);
+    }
+
+    if(!mode)
+    {
+      drive.arcadeDrive(targetSpeed, 0.5*turnSpeed);
+
+    }
     
     // forwardSpeed = (targetSpeed + forwardSpeed*30.0)/31.0;
     // if (Math.abs(forwardSpeed) > 0.4)
