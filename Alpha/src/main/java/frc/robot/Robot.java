@@ -2,33 +2,12 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-<<<<<<< Updated upstream
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-// import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-// // import edu.wpi.first.wpilibj.Joystick;
-// import edu.wpi.first.wpilibj.PWMVictorSPX;
-// import edu.wpi.first.wpilibj.Timer;
-// import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-// import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.PWMVictorSPX;
-import edu.wpi.first.wpilibj.PWMTalonSRX;
-
-import java.util.DoubleSummaryStatistics;
-
-import javax.swing.plaf.TreeUI;
-
-import edu.wpi.first.wpilibj.AnalogGyro;
-=======
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
->>>>>>> Stashed changes
 
 import com.ctre.phoenix.motorcontrol.can.*;
 
@@ -43,18 +22,12 @@ public class Robot extends TimedRobot {
   TalonSRX talonRight = new TalonSRX(3);
   VictorSPX victorRight = new VictorSPX(6);
 
-<<<<<<< Updated upstream
-  // NPM ports 2,3 are used for controlling motors
-  //private DifferentialDrive drive = new DifferentialDrive(new PWMTalonSRX(0), new PWMTalonSRX(3));
-  private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
-=======
   //Pneumatics
   Compressor comp = new Compressor(0);
   DoubleSolenoid arm = new DoubleSolenoid(2,5);
   DoubleSolenoid floats = new DoubleSolenoid(4,3);
   DoubleSolenoid shield1 = new DoubleSolenoid(6,1);
   DoubleSolenoid shield2 = new DoubleSolenoid(0,7);
->>>>>>> Stashed changes
 
   //data
   private final Timer timer = new Timer();
@@ -112,42 +85,8 @@ public class Robot extends TimedRobot {
   double aTarget = 0, bTarget = 0; // a for a button, b for bumpers"
   boolean compressing = false;
 
-<<<<<<< Updated upstream
-  /** This function is called periodically during operator control. */
-  double forwardSpeed = 0;
-  boolean mode = false;
   @Override
   public void teleopPeriodic() {
-    //System.out.println("manual control");
-
-
-    double turnSpeed = stick.getX();
-    double targetSpeed = stick.getY();
-  
-    System.out.println(mode);
-    if(stick.getRawButton(2)) //B on controller
-    {
-      mode = true;
-    }
-    if(stick.getRawButton(2) && mode == true)
-    {
-      mode = false;
-    }
-
-    if(mode)
-    {
-      drive.arcadeDrive(2*targetSpeed, 0.5*turnSpeed);
-    }
-
-    if(!mode)
-    {
-      drive.arcadeDrive(targetSpeed, 0.5*turnSpeed);
-
-    }
-=======
-  @Override
-  public void teleopPeriodic() {
->>>>>>> Stashed changes
     
     double turnSpeed = c.getX(Hand.kLeft)*Math.abs(c.getX(Hand.kLeft))/3;
     double forwardSpeed = -c.getY(Hand.kLeft)*Math.abs(c.getY(Hand.kLeft));
