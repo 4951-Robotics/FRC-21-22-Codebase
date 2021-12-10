@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import json
 
-with open('log2.json') as file:
+with open('s=0.6, t=0.15, e=3.0.json') as file:
 	data = json.load(file)
 
 	time = []

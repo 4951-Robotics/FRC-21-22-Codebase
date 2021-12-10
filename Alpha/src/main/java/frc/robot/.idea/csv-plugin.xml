@@ -3,6 +3,13 @@
   <component name="CsvFileAttributes">
     <option name="attributeMap">
       <map>
+        <entry key="C:\Users\Henry\AppData\Roaming\JetBrains\PyCharmCE2020.2\scratches\macro.py">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\visualize_log.py">
           <value>
             <Attribute>

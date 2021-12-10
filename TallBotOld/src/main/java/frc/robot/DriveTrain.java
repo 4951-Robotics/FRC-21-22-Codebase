@@ -6,6 +6,8 @@ import edu.wpi.first.wpilibj.PWMVictorSPX;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
 public class DriveTrain {
     // 3,2 robot when specified positive numbers, will move in 
     // the direction of the arrows
