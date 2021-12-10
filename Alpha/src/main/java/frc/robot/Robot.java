@@ -1,273 +1,152 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-// import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-// import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-// // import edu.wpi.first.wpilibj.Joystick;
-// import edu.wpi.first.wpilibj.PWMVictorSPX;
-// import edu.wpi.first.wpilibj.Timer;
-// import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-// import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.VictorSP;
-import edu.wpi.first.wpilibj.PWMVictorSPX;
-import edu.wpi.first.wpilibj.PWMTalonSRX;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
 
-import java.util.DoubleSummaryStatistics;
+import com.ctre.phoenix.motorcontrol.can.*;
 
-import edu.wpi.first.wpilibj.AnalogGyro;
+import com.ctre.phoenix.motorcontrol.ControlMode;
 
-import edu.wpi.first.wpilibj.Encoder;
-
-
-
-
-/**
- * The VM is configured to automatically run this class, and to call the functions corresponding to
- * each mode, as described in the TimedRobot documentation. If you change the name of this class or
- * the package after creating this project, you must also update the build.gradle file in the
- * project.
- */
 public class Robot extends TimedRobot {
-  
 
-  /**
-   * This function is run when the robot is first started up and should be used for any
-   * initialization code.
-   */
+  //Motors
+  TalonSRX talonLeft = new TalonSRX(5);
+  VictorSPX victorLeft = new VictorSPX(4);
 
+  TalonSRX talonRight = new TalonSRX(3);
+  VictorSPX victorRight = new VictorSPX(6);
 
-   //victorsp 0, 3 not working
-   //PWM 0, 3 not working\
-   //Talon 0, 3 not working
+  //Pneumatics
+  Compressor comp = new Compressor(0);
+  DoubleSolenoid arm = new DoubleSolenoid(2,5);
+  DoubleSolenoid floats = new DoubleSolenoid(4,3);
+  DoubleSolenoid shield1 = new DoubleSolenoid(6,1);
+  DoubleSolenoid shield2 = new DoubleSolenoid(0,7);
 
-  // NPM ports 2,3 are used for controlling motors
-  private DifferentialDrive drive = new DifferentialDrive(new PWMTalonSRX(0), new PWMTalonSRX(3));
-  // private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(3), new PWMVictorSPX(2));
-
+  //data
   private final Timer timer = new Timer();
-  private final Joystick stick = new Joystick(0);
-  // private final Encoder encoder = new Encoder(0, 1);
-  
-  private AnalogGyro gyro = new AnalogGyro(0);
+  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+  private double angle = 0;
 
-  
-
+  //control
+  private final XboxController c = new XboxController(0);
 
   @Override
   public void robotInit() {
-    
-
+    comp.setClosedLoopControl(false);
+    arm.set(Value.kForward);
+    gyro.calibrate();
   }
 
-  /**
-   * This function is called every robot packet, no matter the mode. Use this for items like
-   * diagnostics that you want ran during disabled, autonomous, teleoperated and test.
-   *
-   * <p>This runs after the mode specific periodic functions, but before LiveWindow and
-   * SmartDashboard integrated updating.
-   */
   @Override
   public void robotPeriodic() {
-    // System.out.println(encoder.getDistance());
-    // System.out.println("angle is " + gyro.getAngle() + "\tt=" + timer.get());
-    // System.out.println(gyro.getAngle() + ",");
+    angle = gyro.getAngle();
+    angle%=360;
+    if (angle < -180)
+      angle+=360;
+    else if (angle > 180)
+      angle-=360;
   }
-
-  /**
-   * This autonomous (along with the chooser code above) shows how to select between different
-   * autonomous modes using the dashboard. The sendable chooser code works with the Java
-   * SmartDashboard. If you prefer the LabVIEW Dashboard, remove all of the chooser code and
-   * uncomment the getString line to get the auto name from the text box below the Gyro
-   *
-   * <p>You can add additional auto modes by adding additional comparisons to the switch structure
-   * below with additional strings. If using the SendableChooser make sure to add them to the
-   * chooser code above as well.
-   */
-
 
   @Override
   public void autonomousInit() {
-
-
     timer.reset();
     timer.start();
-
   }
 
-
-
-  private void driveDumb(){
-    if (timer.get() < 10){
-      drive.tankDrive(0.5, 0.5);
-    } else{
-      drive.stopMotor();
+  private void garen(){
+    double turnSpeed = -angle/225.0; //Max speed of 0.8
+    if (Math.abs(angle) < 10) {
+      turnSpeed = 0;
     }
+    double leftSpeed = turnSpeed;
+    double rightSpeed = turnSpeed;
+
+    victorLeft.set(ControlMode.PercentOutput, leftSpeed);
+    talonLeft.set(ControlMode.PercentOutput, leftSpeed);
+    victorRight.set(ControlMode.PercentOutput, rightSpeed);
+    talonRight.set(ControlMode.PercentOutput, rightSpeed);
   }
 
-  private void driveStraight(){
-    double time = timer.get();
-    if (time < 1){
-      drive.stopMotor();
-      
-    }else if(time < 40){
-      double power = 0.7;
-      double turn_power = -0.08 * gyro.getAngle();
-
-
-      drive.arcadeDrive(power, turn_power, true);
-    }else{
-      drive.stopMotor();
-    }
-  }
-
-
-  private void followAngle(){
-    // uses pid to keep robot on an angle
-
-    double time = timer.get();
-    if (time < 5){
-      drive.stopMotor();
-      
-    }else if(time < 40){
-      double P = 0.5; double I = 0.5; double D = 0.5;
-
-      double angle = gyro.getAngle();
-      double target = 90;
-      double error =  target-angle;
-      
-      // double integral += (error*.02); // Integral is increased by the error*time (which is .02 seconds using normal IterativeRobot)
-      // double derivative = (error - ) / .02;
-      
-      // double motors = P*error + I*this.integral + D*derivative;
-
-      
-
-
-    }else{
-      drive.stopMotor();
-    }
-  }
-
-  private void robotSpin(){
-    double time = timer.get();
-    if (time < 15){
-      drive.tankDrive(0.6,-0.6);
-
-    }else{
-      drive.stopMotor();
-    }
-  }
-
-  private void driveTest(){
-    double time = timer.get();
-    if (time < 1){
-      drive.stopMotor();
-      
-    }else if(time < 40){
-      double speed = 0.6;
-      double allowed_error = 3.0;
-      double angle = gyro.getAngle();
-
-      double turn_power = 0;
-
-      if(angle > allowed_error || angle < -allowed_error){
-        // System.out.println("ok outside range, setting to not 0");
-        turn_power = -0.15 * angle;
-      }
-
-      // drive.arcadeDrive(speed, turn_power, true);
-    }else{
-      drive.stopMotor();
-    }
-  }
-
-  /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() { // negative turns left, -angle = left
-    // followAngle();
-    // robotSpin();
-    driveDumb();
-    // driveStraight();
-    // driveTest();
-  }
+  public void autonomousPeriodic() { garen(); }
 
-
-  /** This function is called once when teleop is enabled. */
   @Override
-  public void teleopInit() {}   
-  
+  public void teleopInit() {
+    gyro.reset();
+  }   
 
-  /** This function is called periodically during operator control. */
-  double forwardSpeed = 0;
+  double aTarget = 0, bTarget = 0; // a for a button, b for bumpers"
+  boolean compressing = false;
+
   @Override
   public void teleopPeriodic() {
-    System.out.println("manual control");
-
-
-    double turnSpeed = stick.getX();
-    double targetSpeed = stick.getY();
-
-    drive.arcadeDrive(targetSpeed, 0.5*turnSpeed);
     
-    // forwardSpeed = (targetSpeed + forwardSpeed*30.0)/31.0;
-    // if (Math.abs(forwardSpeed) > 0.4)
-    // drive.arcadeDrive(forwardSpeed, 0.5*turnSpeed);
-    
-  
+    double turnSpeed = c.getX(Hand.kLeft)*Math.abs(c.getX(Hand.kLeft))/3;
+    double forwardSpeed = -c.getY(Hand.kLeft)*Math.abs(c.getY(Hand.kLeft));
+    double aTurn = aTarget-angle, bTurn = bTarget-angle;
+    if (aTurn > 180) 
+      aTurn -= 360;
+    if (aTurn < -180) 
+      aTurn += 360;
+    if (bTurn > 180) 
+      bTurn -= 360;
+    if (bTurn < -180) 
+      bTurn += 360;
+    if (c.getStickButtonPressed(Hand.kLeft)) //Start driving straight
+      aTarget = angle;
+    if (c.getStickButton(Hand.kLeft)) //Continue driving straight
+      turnSpeed = Math.max(-0.4,Math.min((aTurn)/80.0,0.4)); //Max speed of 0.997
+    if (c.getBumperPressed(Hand.kLeft)) //saves orientation
+      bTarget = angle;
+    if (c.getBumper(Hand.kRight)) //orients to saved rotation
+      turnSpeed = Math.max(-0.4,Math.min((bTurn)/80.0,0.4));  //Max speed of 0.997
+    if (c.getStartButtonPressed()) {
+      compressing = !compressing;
+      comp.setClosedLoopControl(compressing);
+    }
+    if (c.getXButtonPressed()) 
+      arm.set(Value.kReverse);
+    if (c.getXButtonReleased())
+      arm.set(Value.kForward);
+    if (c.getYButtonPressed()) 
+      floats.set(Value.kReverse);
+    if (c.getYButtonReleased())
+      floats.set(Value.kForward);
+    if (c.getAButtonPressed()) 
+      shield1.set(Value.kReverse);
+    if (c.getAButtonReleased())
+      shield1.set(Value.kForward);
+    if (c.getBButtonPressed()) 
+      shield2.set(Value.kReverse);
+    if (c.getBButtonReleased())
+      shield2.set(Value.kForward);
+    System.out.println("angle: " + angle);
 
+    double leftSpeed = (forwardSpeed+turnSpeed)/0.5;
+    double rightSpeed = -(forwardSpeed-turnSpeed)/0.5;
+
+    victorLeft.set(ControlMode.PercentOutput, leftSpeed);
+    talonLeft.set(ControlMode.PercentOutput, leftSpeed);
+    victorRight.set(ControlMode.PercentOutput, rightSpeed);
+    talonRight.set(ControlMode.PercentOutput, rightSpeed);
   }
 
-  /** This function is called once when the robot is disabled. */
   @Override
   public void disabledInit() {}
 
-  /** This function is called periodically when disabled. */
   @Override
-  public void disabledPeriodic() {
+  public void disabledPeriodic() {}
 
-    // try {
-    //   //  
-
-    //   FileWriter logwriter = new FileWriter("testfile.txt");
-    //   logwriter.append(timer.get() + " " + gyro.getAngle());
-    //   logwriter.close();
-
-
-    // } catch (IOException e){
-    //   System.out.println("problem");
-    //   e.printStackTrace();
-    // }
-
-    // try{
-    //   BufferedWriter writer = new BufferedWriter(
-    //     new FileWriter("C:\\Users\\Henry\\RobotRepo\\Alpha\\src\\main\\java\\frc\\robot\\Robot.java\\testfile.txt"));
-    //   writer.write(timer.get() + " " + gyro.getAngle() + "\n");
-    //   writer.close();
-    // } catch (IOException e){
-    //   System.out.println("PROBLEM PROBLEM NOT GOOD");
-    //   e.printStackTrace();
-    // }
-    
-    // System.out.println(gyro.getAngle());
-  }
-
-  /** This function is called once when test mode is enabled. */
   @Override
   public void testInit() {}
 
-  /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
 }
