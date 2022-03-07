@@ -55,7 +55,6 @@ public class Robot extends TimedRobot {
   public boolean climbUp = false;
   //control
   private final XboxController c = new XboxController(0);
-  public double flywheelSpeed = 0.1;
   public double intakeSpeed = 0.7;
   public double climbSpeed = 0.0;
 
@@ -76,7 +75,7 @@ public class Robot extends TimedRobot {
     boost.set(Value.kReverse);
     // lock.set(Value.kReverse);
     //gyro.calibrate();
-    flyWheelMotor.set(flywheelSpeed);
+    flyWheelMotor.set(0);
     climbMotor.set(0);
     intakeMotor.set(intakeSpeed);
 
@@ -103,7 +102,8 @@ public class Robot extends TimedRobot {
     timer.start();
   }
 
-  private void driveDumb(){
+  private void scoreTaxi(){
+    // score 2 points by driving off the starting tarmac
     if (timer.get() < 1.5){
       drive.tankDrive(0.6, 0.6);
     }else{
@@ -113,7 +113,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() {
-    driveDumb();
+    scoreTaxi();
   }
 
   @Override
@@ -144,9 +144,14 @@ public class Robot extends TimedRobot {
 
 
     // FLYWHEEL SYSTEM
+
+    int flyWheelMode = 0
+    double[] flyWheelSpeeds = [0.0, 0.4, 0.8]; // speeds when driving around, low goal, and high goal
     // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-    if(c.getRightBumperPressed() && flywheelSpeed<1) // increment flywhell speed when right bumper pressed
-       flywheelSpeed = .9;
+    if(c.getRightBumperPressed()) // increment flywhell speed when right bumper pressed
+      flyWheelMode++;
+    if(c.getLeftBumperPressed())
+      flyWheelMode--;
     
     
     // CLIMBER SYSTEM
@@ -159,30 +164,12 @@ public class Robot extends TimedRobot {
 
 
 
-      if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
-        // lock.set(Value.kForward);
-
-          // if(c.getYButtonPressed()) // up
-    //   climbUp = !climbUp;
-    
-
-    
-    // if(climbUp)
-    //   climbMotor.set()
-    
-
-
-      
+    // if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
+      // lock.set(Value.kForward);
 
 
 
-    
-    // if (c.getBButtonPressed()) 
-    //   shield2.set(Value.kReverse);
-    // if (c.getBButtonReleased())
-    //   shield2.set(Value.kForward);
-
-    flyWheelMotor.set(flywheelSpeed);
+    flyWheelMotor.set(flyWheelSpeeds[flyWheelMode]);
     intakeMotor.set(intakeSpeed);
     climbMotor.set(climbSpeed);
   }
