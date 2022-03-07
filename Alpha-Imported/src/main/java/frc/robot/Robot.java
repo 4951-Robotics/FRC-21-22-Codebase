@@ -5,16 +5,20 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
-import edu.wpi.first.wpilibj.GenericHID.Hand;
+
+import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator.Validity;
+
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.PWMVictorSPX;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+
+
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
-import com.ctre.phoenix.motorcontrol.can.*;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 
 public class Robot extends TimedRobot {
 
@@ -25,28 +29,35 @@ public class Robot extends TimedRobot {
   // TalonSRX talonRight = new TalonSRX(3);
   // VictorSPX victorRight = new VictorSPX(6);
 
+  PWMVictorSPX leftMotor = new PWMVictorSPX(2);
+  PWMVictorSPX rightMotor = new PWMVictorSPX(3);
+  public DifferentialDrive drive = new DifferentialDrive(leftMotor, rightMotor); // insert drive here
 
-  private DifferentialDrive drive = new DifferentialDrive(new PWMVictorSPX(2), new PWMVictorSPX(3)); // insert drive here
-  VictorSPX flyWheel = new VictorSPX(0); ;//INCLUDE PORT NAME HERE
-  VictorSPX intake = new VictorSPX(1); // assuming 1 
-  VictorSPX climb = new VictorSPX(4);
+  PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
+  PWMVictorSPX intakeMotor = new PWMVictorSPX(1); // assuming 1 
+  PWMVictorSPX climbMotor = new PWMVictorSPX(4);
+
 
   //Pneumatics
-  Compressor comp = new Compressor(0);
-  DoubleSolenoid intakeArm = new DoubleSolenoid(2,5);
+  Compressor comp = new Compressor(0, PneumaticsModuleType.CTREPCM);
+  DoubleSolenoid boost = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0,7);
+  // DoubleSolenoid lock = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1,7);
+
   // DoubleSolenoid floats = new DoubleSolenoid(4,3);
   // DoubleSolenoid shield1 = new DoubleSolenoid(6,1);
   // DoubleSolenoid shield2 = new DoubleSolenoid(0,7);
 
   //data
   private final Timer timer = new Timer();
-  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+  //private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
   private double angle = 0;
 
+  public boolean climbUp = false;
   //control
   private final XboxController c = new XboxController(0);
   public double flywheelSpeed = 0.1;
   public double intakeSpeed = 0.7;
+  public double climbSpeed = 0.0;
 
 
 
@@ -62,8 +73,18 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     // comp.setClosedLoopControl(false);
     // arm.set(Value.kForward);
-    intakeArm.set(Value.kReverse);
-    gyro.calibrate();
+    boost.set(Value.kReverse);
+    // lock.set(Value.kReverse);
+    //gyro.calibrate();
+    flyWheelMotor.set(flywheelSpeed);
+    climbMotor.set(0);
+    intakeMotor.set(intakeSpeed);
+
+
+  
+    rightMotor.setInverted(true);
+  
+  
   }
 
   @Override
@@ -87,20 +108,19 @@ public class Robot extends TimedRobot {
     if (Math.abs(angle) < 10) {
       turnSpeed = 0;
     }
-    double leftSpeed = turnSpeed;
-    double rightSpeed = turnSpeed;
+    // double leftSpeed = turnSpeed;
+    // double rightSpeed = turnSpeed;
 
     // victorLeft.set(ControlMode.PercentOutput, leftSpeed);
     // talonLeft.set(ControlMode.PercentOutput, leftSpeed);
     // victorRight.set(ControlMode.PercentOutput, rightSpeed);
     // talonRight.set(ControlMode.PercentOutput, rightSpeed);
-    flyWheel.set(ControlMode.PercentOutput, flywheelSpeed);
-    intake.set(ControlMode.PercentOutput, intakeSpeed);
+
   }
 
   private void driveDumb(){
-    if (timer.get() < 2.5){
-      drive.tankDrive(-0.6, -0.6);
+    if (timer.get() < 1.5){
+      drive.tankDrive(0.6, 0.6);
     }else{
       drive.stopMotor();
     }
@@ -119,32 +139,67 @@ public class Robot extends TimedRobot {
   // double aTarget = 0, bTarget = 0; // a for a button, b for bumpers"
   boolean compressing = false;
 
+
   @Override
   public void teleopPeriodic() {
 
-    double forwardSpeed = -c.getY(Hand.kLeft)*Math.abs(c.getY(Hand.kLeft));
-    double turnSpeed = c.getX(Hand.kLeft)*Math.abs(c.getX(Hand.kLeft))/3;
+    // DRIVING SYSTEM
+    double forwardSpeed = c.getLeftY();
+    double turnSpeed = c.getLeftX();
 
-    drive.arcadeDrive(forwardSpeed, turnSpeed, true); // might need negative
+    drive.arcadeDrive(forwardSpeed*.8, -turnSpeed*.8, true); // might need negative
 
-        // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-    if(c.getBumperPressed(Hand.kRight) && flywheelSpeed<1) // increment flywhell speed when right bumper pressed
-       flywheelSpeed+=.1;
-    if(c.getBumperPressed(Hand.kLeft) && flywheelSpeed>0.1) // decrement flywheel speed when left bumper pressed.
-      flywheelSpeed-=.1;
+    if(c.getBButtonPressed()) // toggle sprint
+      boost.toggle();
 
-    if(c.getAButtonPressed())
-      intakeArm.set(Value.kForward);
 
-    if(c.getBButtonPressed())
-      intakeArm.set(Value.kReverse);
+    // FEEDER SYSTEM
+
+
+
+
+    // FLYWHEEL SYSTEM
+    // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
+    if(c.getRightBumperPressed() && flywheelSpeed<1) // increment flywhell speed when right bumper pressed
+       flywheelSpeed = .9;
+    
+    
+    // CLIMBER SYSTEM
+    
+    climbSpeed = 0.0;
+    if(c.getYButton()) // up
+      climbSpeed = 0.8;
+    if(c.getAButton()) // down
+      climbSpeed = -0.6;
+
+
+
+      if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
+        // lock.set(Value.kForward);
+
+          // if(c.getYButtonPressed()) // up
+    //   climbUp = !climbUp;
+    
+
+    
+    // if(climbUp)
+    //   climbMotor.set()
+    
+
+
+      
+
+
+
+    
     // if (c.getBButtonPressed()) 
     //   shield2.set(Value.kReverse);
     // if (c.getBButtonReleased())
     //   shield2.set(Value.kForward);
 
-    flyWheel.set(ControlMode.PercentOutput, flywheelSpeed);
-    intake.set(ControlMode.PercentOutput, intakeSpeed);
+    flyWheelMotor.set(flywheelSpeed);
+    intakeMotor.set(intakeSpeed);
+    climbMotor.set(climbSpeed);
   }
 
   
@@ -152,8 +207,8 @@ public class Robot extends TimedRobot {
   // @Override
   // public void teleopPeriodic() {
     
-  //   double turnSpeed = c.getX(Hand.kLeft)*Math.abs(c.getX(Hand.kLeft))/3;
-  //   double forwardSpeed = -c.getY(Hand.kLeft)*Math.abs(c.getY(Hand.kLeft));
+  //   double turnSpeed = c.getLeftX()*Math.abs(c.getLeftX())/3;
+  //   double forwardSpeed = -c.getLeftY()*Math.abs(c.getLeftY());
   //   double aTurn = aTarget-angle, bTurn = bTarget-angle;
   //   if (aTurn > 180) 
   //     aTurn -= 360;
@@ -163,13 +218,13 @@ public class Robot extends TimedRobot {
   //     bTurn -= 360;
   //   if (bTurn < -180) 
   //     bTurn += 360;
-  //   if (c.getStickButtonPressed(Hand.kLeft)) //Start driving straight
+  //   if (c.getLeftStickButtonPressed()) //Start driving straight
   //     aTarget = angle;
-  //   if (c.getStickButton(Hand.kLeft)) //Continue driving straight
+  //   if (c.getLeftStickButton()) //Continue driving straight
   //     turnSpeed = Math.max(-0.4,Math.min((aTurn)/80.0,0.4)); //Max speed of 0.997
-  //   if (c.getBumperPressed(Hand.kLeft)) //saves orientation
+  //   if (c.getLeftBumperPressed()) //saves orientation
   //     bTarget = angle;
-  //   if (c.getBumper(Hand.kRight)) //orients to saved rotation
+  //   if (c.getRightBumper()) //orients to saved rotation
   //     turnSpeed = Math.max(-0.4,Math.min((bTurn)/80.0,0.4));  //Max speed of 0.997
   //   if (c.getStartButtonPressed()) {
   //     compressing = !compressing;
@@ -189,9 +244,9 @@ public class Robot extends TimedRobot {
   //   //   shield1.set(Value.kForward);
     
   //   // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-  //   if(c.getBumperPressed(Hand.kRight) && flywheelSpeed<1) // increment flywhell speed when right bumper pressed
+  //   if(c.getRightBumperPressed() && flywheelSpeed<1) // increment flywhell speed when right bumper pressed
   //      flywheelSpeed+=.1;
-  //   if(c.getBumperPressed(Hand.kLeft) && flywheelSpeed>0.1) // decrement flywheel speed when left bumper pressed.
+  //   if(c.getLeftBumperPressed() && flywheelSpeed>0.1) // decrement flywheel speed when left bumper pressed.
   //     flywheelSpeed-=.1;
   //   // if (c.getBButtonPressed()) 
   //   //   shield2.set(Value.kReverse);
