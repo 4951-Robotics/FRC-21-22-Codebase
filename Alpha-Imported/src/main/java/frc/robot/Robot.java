@@ -103,21 +103,6 @@ public class Robot extends TimedRobot {
     timer.start();
   }
 
-  private void garen(){
-    double turnSpeed = -angle/225.0; //Max speed of 0.8
-    if (Math.abs(angle) < 10) {
-      turnSpeed = 0;
-    }
-    // double leftSpeed = turnSpeed;
-    // double rightSpeed = turnSpeed;
-
-    // victorLeft.set(ControlMode.PercentOutput, leftSpeed);
-    // talonLeft.set(ControlMode.PercentOutput, leftSpeed);
-    // victorRight.set(ControlMode.PercentOutput, rightSpeed);
-    // talonRight.set(ControlMode.PercentOutput, rightSpeed);
-
-  }
-
   private void driveDumb(){
     if (timer.get() < 1.5){
       drive.tankDrive(0.6, 0.6);
@@ -201,69 +186,6 @@ public class Robot extends TimedRobot {
     intakeMotor.set(intakeSpeed);
     climbMotor.set(climbSpeed);
   }
-
-  
-
-  // @Override
-  // public void teleopPeriodic() {
-    
-  //   double turnSpeed = c.getLeftX()*Math.abs(c.getLeftX())/3;
-  //   double forwardSpeed = -c.getLeftY()*Math.abs(c.getLeftY());
-  //   double aTurn = aTarget-angle, bTurn = bTarget-angle;
-  //   if (aTurn > 180) 
-  //     aTurn -= 360;
-  //   if (aTurn < -180) 
-  //     aTurn += 360;
-  //   if (bTurn > 180) 
-  //     bTurn -= 360;
-  //   if (bTurn < -180) 
-  //     bTurn += 360;
-  //   if (c.getLeftStickButtonPressed()) //Start driving straight
-  //     aTarget = angle;
-  //   if (c.getLeftStickButton()) //Continue driving straight
-  //     turnSpeed = Math.max(-0.4,Math.min((aTurn)/80.0,0.4)); //Max speed of 0.997
-  //   if (c.getLeftBumperPressed()) //saves orientation
-  //     bTarget = angle;
-  //   if (c.getRightBumper()) //orients to saved rotation
-  //     turnSpeed = Math.max(-0.4,Math.min((bTurn)/80.0,0.4));  //Max speed of 0.997
-  //   if (c.getStartButtonPressed()) {
-  //     compressing = !compressing;
-  //     comp.setClosedLoopControl(compressing);
-  //   }
-  //   if (c.getXButtonPressed()) 
-  //     arm.set(Value.kReverse);
-  //   if (c.getXButtonReleased())
-  //     arm.set(Value.kForward);
-  //   if (c.getYButtonPressed()) 
-  //     floats.set(Value.kReverse);
-  //   if (c.getYButtonReleased())
-  //     floats.set(Value.kForward);
-  //   // if (c.getAButtonPressed()) 
-  //   //   shield1.set(Value.kReverse);
-  //   // if (c.getAButtonReleased())
-  //   //   shield1.set(Value.kForward);
-    
-  //   // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-  //   if(c.getRightBumperPressed() && flywheelSpeed<1) // increment flywhell speed when right bumper pressed
-  //      flywheelSpeed+=.1;
-  //   if(c.getLeftBumperPressed() && flywheelSpeed>0.1) // decrement flywheel speed when left bumper pressed.
-  //     flywheelSpeed-=.1;
-  //   // if (c.getBButtonPressed()) 
-  //   //   shield2.set(Value.kReverse);
-  //   // if (c.getBButtonReleased())
-  //   //   shield2.set(Value.kForward);
-  //   System.out.println("angle: " + angle);
-
-  //   double leftSpeed = (forwardSpeed+turnSpeed)/0.5;
-  //   double rightSpeed = -(forwardSpeed-turnSpeed)/0.5;
-
-  //   victorLeft.set(ControlMode.PercentOutput, leftSpeed);
-  //   talonLeft.set(ControlMode.PercentOutput, leftSpeed);
-  //   victorRight.set(ControlMode.PercentOutput, rightSpeed);
-  //   talonRight.set(ControlMode.PercentOutput, rightSpeed);
-  //   //talonRight.set(ControlMode.PercentOutput, flywheelSpeed);
-
-  // }
 
   @Override
   public void disabledInit() {}
