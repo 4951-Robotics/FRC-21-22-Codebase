@@ -134,7 +134,9 @@ public class Robot extends TimedRobot {
     double forwardSpeed = c.getLeftY();
     double turnSpeed = c.getLeftX();
 
-    drive.arcadeDrive(forwardSpeed*.8, -turnSpeed*.8, true); // might need negative
+    // DO NOT TOUCH
+    drive.arcadeDrive(forwardSpeed, -turnSpeed, true); // DO NOT TOUCH
+    // DO NOT TOUCH ^
 
     if(c.getBButtonPressed()) // toggle sprint
       boost.toggle();
