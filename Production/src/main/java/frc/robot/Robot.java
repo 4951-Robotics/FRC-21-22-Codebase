@@ -35,7 +35,7 @@ public class Robot extends TimedRobot {
 
   PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
   PWMVictorSPX intakeMotor = new PWMVictorSPX(1); // assuming 1 
-  PWMVictorSPX climbMotor = new PWMVictorSPX(4);
+  PWMVictorSPX climbMotor = new PWMVictorSPX(4); // This is correct
 
 
   //Pneumatics
@@ -72,9 +72,11 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     // comp.setClosedLoopControl(false);
     // arm.set(Value.kForward);
-    boost.set(Value.kReverse);
+    
     // lock.set(Value.kReverse);
     //gyro.calibrate();
+
+    boost.set(Value.kReverse);
     flyWheelMotor.set(0);
     climbMotor.set(0);
     intakeMotor.set(intakeSpeed);
