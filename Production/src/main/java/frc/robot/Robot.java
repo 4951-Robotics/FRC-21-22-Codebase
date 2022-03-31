@@ -18,6 +18,9 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
 
 
 public class Robot extends TimedRobot {
@@ -33,7 +36,11 @@ public class Robot extends TimedRobot {
   PWMVictorSPX rightMotor = new PWMVictorSPX(3);
   public DifferentialDrive drive = new DifferentialDrive(leftMotor, rightMotor); // insert drive here
 
-  PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
+  // PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
+
+  CANSparkMax flyWheelMotor = new CANSparkMax(0, MotorType.kBrushless);
+  
+
   PWMVictorSPX intakeMotor = new PWMVictorSPX(1); // assuming 1 
   PWMVictorSPX climbMotor = new PWMVictorSPX(4); // This is correct
 
@@ -84,6 +91,14 @@ public class Robot extends TimedRobot {
 
   
     rightMotor.setInverted(true);
+
+
+    /**
+     * The RestoreFactoryDefaults method can be used to reset the configuration parameters
+     * in the SPARK MAX to their factory default state. If no argument is passed, these
+     * parameters will not persist between power cycles
+     */
+    flyWheelMotor.restoreFactoryDefaults();
   
   
   }
@@ -149,13 +164,15 @@ public class Robot extends TimedRobot {
 
     // FLYWHEEL SYSTEM
 
-    int flyWheelMode = 0
-    double[] flyWheelSpeeds = [0.0, 0.4, 0.8]; // speeds when driving around, low goal, and high goal
+    int flyWheelMode = 0;
+    double[] flyWheelSpeeds = {0.0, 0.5, 0.95}; // speeds when driving around, low goal, and high goal
     // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
     if(c.getRightBumperPressed()) // increment flywhell speed when right bumper pressed
       flyWheelMode++;
     if(c.getLeftBumperPressed())
       flyWheelMode--;
+
+    flyWheelMode %= 3;
     
     
     // CLIMBER SYSTEM
