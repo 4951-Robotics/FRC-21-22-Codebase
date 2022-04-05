@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
+// https://software-metadata.revrobotics.com/REVLib.json
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
@@ -38,11 +39,12 @@ public class Robot extends TimedRobot {
 
   // PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
 
-  CANSparkMax flyWheelMotor = new CANSparkMax(0, MotorType.kBrushless);
+  CANSparkMax flyWheelMotor = new CANSparkMax(10, MotorType.kBrushless);
   
 
   PWMVictorSPX intakeMotor = new PWMVictorSPX(1); // assuming 1 
   PWMVictorSPX climbMotor = new PWMVictorSPX(4); // This is correct
+  PWMVictorSPX feederMotor = new PWMVictorSPX(5);
 
 
   //Pneumatics
@@ -64,6 +66,7 @@ public class Robot extends TimedRobot {
   private final XboxController c = new XboxController(0);
   public double intakeSpeed = 0.7;
   public double climbSpeed = 0.0;
+  int flyWheelMode = 0;
 
 
 
@@ -128,9 +131,18 @@ public class Robot extends TimedRobot {
     }
   }
 
+  private void shoot(){
+    if (timer.get() < 5){
+      flyWheelMotor.set(0.3);
+    }else{
+      flyWheelMotor.stopMotor();
+    }
+  }
+
   @Override
   public void autonomousPeriodic() {
-    scoreTaxi();
+    // scoreTaxi();
+    shoot();
   }
 
   @Override
@@ -150,7 +162,7 @@ public class Robot extends TimedRobot {
     double turnSpeed = c.getLeftX();
 
     // DO NOT TOUCH
-    drive.arcadeDrive(forwardSpeed, -turnSpeed, true); // DO NOT TOUCH
+    // drive.arcadeDrive(forwardSpeed, -turnSpeed, true); // DO NOT TOUCH
     // DO NOT TOUCH ^
 
     if(c.getBButtonPressed()) // toggle sprint
@@ -159,20 +171,27 @@ public class Robot extends TimedRobot {
 
     // FEEDER SYSTEM
 
-
+    double rTrigger = c.getRightTriggerAxis();
+    double lTrigger = c.getLeftTriggerAxis();
+    double feederSpeed = 0.0;
+    
+    if (rTrigger > 0.1){
+      // activiate right trigger
+      feederSpeed = rTrigger * rTrigger;
+    }else if (lTrigger > 0.1){
+      feederSpeed = -lTrigger * lTrigger;
+    }
 
 
     // FLYWHEEL SYSTEM
 
-    int flyWheelMode = 0;
+    
     double[] flyWheelSpeeds = {0.0, 0.5, 0.95}; // speeds when driving around, low goal, and high goal
     // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-    if(c.getRightBumperPressed()) // increment flywhell speed when right bumper pressed
+    if(c.getRightBumperPressed() && flyWheelMode < 2) // increment flywhell speed when right bumper pressed
       flyWheelMode++;
     if(c.getLeftBumperPressed())
-      flyWheelMode--;
-
-    flyWheelMode %= 3;
+      flyWheelMode = 0;
     
     
     // CLIMBER SYSTEM
@@ -189,8 +208,8 @@ public class Robot extends TimedRobot {
       // lock.set(Value.kForward);
 
 
-
-    flyWheelMotor.set(flyWheelSpeeds[flyWheelMode]);
+    feederMotor.set(feederSpeed);
+    flyWheelMotor.set(-flyWheelSpeeds[flyWheelMode]);
     intakeMotor.set(intakeSpeed);
     climbMotor.set(climbSpeed);
   }
