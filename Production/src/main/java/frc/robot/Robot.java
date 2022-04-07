@@ -6,6 +6,8 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator.Validity;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
@@ -40,6 +42,7 @@ public class Robot extends TimedRobot {
   // PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
 
   CANSparkMax flyWheelMotor = new CANSparkMax(10, MotorType.kBrushless);
+  RelativeEncoder flyWheelEncoder = flyWheelMotor.getEncoder();
   
 
   PWMVictorSPX intakeMotor = new PWMVictorSPX(1); // assuming 1 
@@ -67,6 +70,10 @@ public class Robot extends TimedRobot {
   public double intakeSpeed = 0.7;
   public double climbSpeed = 0.0;
   int flyWheelMode = 0;
+
+  // stats and debug?
+  boolean stats = true;
+
 
 
 
@@ -121,6 +128,8 @@ public class Robot extends TimedRobot {
     timer.reset();
     timer.start();
   }
+
+  // Autonomous Functions
 
   private void scoreTaxi(){
     // score 2 points by driving off the starting tarmac
@@ -177,9 +186,9 @@ public class Robot extends TimedRobot {
     
     if (rTrigger > 0.1){
       // activiate right trigger
-      feederSpeed = rTrigger * rTrigger;
+      feederSpeed = 0.3;
     }else if (lTrigger > 0.1){
-      feederSpeed = -lTrigger * lTrigger;
+      feederSpeed = -0.3;
     }
 
 
@@ -212,7 +221,14 @@ public class Robot extends TimedRobot {
     flyWheelMotor.set(-flyWheelSpeeds[flyWheelMode]);
     intakeMotor.set(intakeSpeed);
     climbMotor.set(climbSpeed);
+
+    if (stats){
+      SmartDashboard.putNumber("Flywheel Encoder", flyWheelEncoder.getVelocity());
+    }
+    
   }
+` 
+
 
   @Override
   public void disabledInit() {}
