@@ -5,8 +5,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
+import edu.wpi.first.wpilibj.Ultrasonic;
 
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator.Validity;
 
@@ -22,7 +22,13 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 // https://software-metadata.revrobotics.com/REVLib.json
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+
+
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+// import edu.wpi.first.wpilibj.Spark;
+
 
 
 
@@ -39,16 +45,17 @@ public class Robot extends TimedRobot {
   PWMVictorSPX rightMotor = new PWMVictorSPX(3);
   public DifferentialDrive drive = new DifferentialDrive(leftMotor, rightMotor); // insert drive here
 
-  // PWMSparkMax flyWheelMotor = new PWMSparkMax(0); ;//INCLUDE PORT NAME HERE
 
   CANSparkMax flyWheelMotor = new CANSparkMax(10, MotorType.kBrushless);
   RelativeEncoder flyWheelEncoder = flyWheelMotor.getEncoder();
-  
 
-  PWMVictorSPX intakeMotor = new PWMVictorSPX(1); // assuming 1 
+  CANSparkMax feederMotor = new CANSparkMax(11, MotorType.kBrushless);
+
+  PWMVictorSPX intakeMotor = new PWMVictorSPX(5); // assuming 1 
   PWMVictorSPX climbMotor = new PWMVictorSPX(4); // This is correct
-  PWMVictorSPX feederMotor = new PWMVictorSPX(5);
+  // PWMVictorSPX feederMotor = new PWMVictorSPX(5);
 
+  
 
   //Pneumatics
   Compressor comp = new Compressor(0, PneumaticsModuleType.CTREPCM);
@@ -62,18 +69,22 @@ public class Robot extends TimedRobot {
   //data
   private final Timer timer = new Timer();
   //private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
-  private double angle = 0;
+ // private double angle = 0;
 
-  public boolean climbUp = false;
+  //public boolean climbUp = false;
   //control
-  private final XboxController c = new XboxController(0);
-  public double intakeSpeed = 0.7;
+  private final XboxController c1 = new XboxController(0);
+  private final XboxController c2 = new XboxController(1);
+  public double intakeSpeed = 0.0;
   public double climbSpeed = 0.0;
+  public double feederSpeed = 0.0;
   int flyWheelMode = 0;
 
-  // stats and debug?
-  boolean stats = true;
+  Ultrasonic ultrasonic = new Ultrasonic(1, 2); //1 AND 2 correspond to DIO pins
 
+
+  // stats toggle the smartdashboard
+  boolean stats = true;
 
 
 
@@ -102,6 +113,7 @@ public class Robot extends TimedRobot {
   
     rightMotor.setInverted(true);
 
+    Ultrasonic.setAutomaticMode(true);
 
     /**
      * The RestoreFactoryDefaults method can be used to reset the configuration parameters
@@ -128,8 +140,6 @@ public class Robot extends TimedRobot {
     timer.reset();
     timer.start();
   }
-
-  // Autonomous Functions
 
   private void scoreTaxi(){
     // score 2 points by driving off the starting tarmac
@@ -167,68 +177,88 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
 
     // DRIVING SYSTEM
-    double forwardSpeed = c.getLeftY();
-    double turnSpeed = c.getLeftX();
+    double forwardSpeed = c1.getLeftY();
+    double turnSpeed = c1.getLeftX();
 
     // DO NOT TOUCH
-    // drive.arcadeDrive(forwardSpeed, -turnSpeed, true); // DO NOT TOUCH
+    drive.arcadeDrive(forwardSpeed, -turnSpeed, true); // DO NOT TOUCH
     // DO NOT TOUCH ^
 
-    if(c.getBButtonPressed()) // toggle sprint
+
+    if(c1.getBButtonPressed()) // toggle sprint
       boost.toggle();
 
 
-    // FEEDER SYSTEM
+    // INTAKE SYSTEM |   CONTROLLER 2 right trigger suck, left trigger spit
 
-    double rTrigger = c.getRightTriggerAxis();
-    double lTrigger = c.getLeftTriggerAxis();
-    double feederSpeed = 0.0;
-    
-    if (rTrigger > 0.1){
-      // activiate right trigger
-      feederSpeed = 0.3;
-    }else if (lTrigger > 0.1){
-      feederSpeed = -0.3;
+  
+    double rightTrigger = c2.getRightTriggerAxis();
+    double leftTrigger = c2.getLeftTriggerAxis();
+
+    intakeSpeed = 0.0;
+    if(rightTrigger > 0){
+      intakeSpeed = rightTrigger;
+    }else if (leftTrigger > 0){
+      intakeSpeed = -leftTrigger;
     }
 
 
-    // FLYWHEEL SYSTEM
+
+    // FEEDER SYSTEM |   CONTROLLER 2 y & a hold down to spin
 
     
-    double[] flyWheelSpeeds = {0.0, 0.5, 0.95}; // speeds when driving around, low goal, and high goal
+    
+    if (c2.getAButton()){
+      // activiate right trigger
+      feederSpeed = 0.5;
+    }else if (c2.getYButton()){
+      feederSpeed = -0.5;
+    } else{
+      feederSpeed = 0.0;
+    }
+
+
+    // FLYWHEEL SYSTEM |  CONTROLLER 2 controlled by bumpers, RIGHT BUMPER increment speed, capped at highest speed, LEFT BUMPER reset speed to 0
+
+    
+    double[] flyWheelSpeeds = {0.0, 0.5, 0.85}; // speeds when driving around, low goal, and high goal
     // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-    if(c.getRightBumperPressed() && flyWheelMode < 2) // increment flywhell speed when right bumper pressed
+    if(c2.getRightBumperPressed() && flyWheelMode < 2) // increment flywhell speed when right bumper pressed
       flyWheelMode++;
-    if(c.getLeftBumperPressed())
+    if(c2.getLeftBumperPressed())
       flyWheelMode = 0;
     
     
-    // CLIMBER SYSTEM
+    // CLIMBER SYSTEM |   CONTROLLER 1 controlled by Y & A
     
     climbSpeed = 0.0;
-    if(c.getYButton()) // up
+    if(c1.getYButton()) // up
       climbSpeed = 0.8;
-    if(c.getAButton()) // down
+    if(c1.getAButton()) // down
       climbSpeed = -0.6;
 
 
+    
+
+
+    if(ultrasonic.getRangeMM()>2000)
+    {
+      //LIGHTS ARE GREEN
+    }
 
     // if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
       // lock.set(Value.kForward);
 
-
-    feederMotor.set(feederSpeed);
-    flyWheelMotor.set(-flyWheelSpeeds[flyWheelMode]);
-    intakeMotor.set(intakeSpeed);
-    climbMotor.set(climbSpeed);
-
     if (stats){
       SmartDashboard.putNumber("Flywheel Encoder", flyWheelEncoder.getVelocity());
     }
-    
-  }
-` 
 
+    intakeMotor.set(intakeSpeed); // PWM 
+    feederMotor.set(feederSpeed); // CAN
+    flyWheelMotor.set(-flyWheelSpeeds[flyWheelMode]); //CAN
+    intakeMotor.set(intakeSpeed); //PWM
+    climbMotor.set(climbSpeed); //PWM
+  }
 
   @Override
   public void disabledInit() {}
