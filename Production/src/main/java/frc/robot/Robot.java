@@ -7,10 +7,15 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value.*;
 import edu.wpi.first.wpilibj.Ultrasonic;
 
+import java.lang.System.Logger;
+import java.security.cert.TrustAnchor;
 
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator.Validity;
 
 import edu.wpi.first.wpilibj.ADXRS450_Gyro;
+import edu.wpi.first.wpilibj.AddressableLED;
+import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -18,6 +23,7 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 // https://software-metadata.revrobotics.com/REVLib.json
@@ -28,6 +34,9 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 // import edu.wpi.first.wpilibj.Spark;
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
+
 
 
 
@@ -40,6 +49,9 @@ public class Robot extends TimedRobot {
 
   // TalonSRX talonRight = new TalonSRX(3);
   // VictorSPX victorRight = new VictorSPX(6);
+
+  // Camera
+
 
   PWMVictorSPX leftMotor = new PWMVictorSPX(2);
   PWMVictorSPX rightMotor = new PWMVictorSPX(3);
@@ -60,7 +72,10 @@ public class Robot extends TimedRobot {
   //Pneumatics
   Compressor comp = new Compressor(0, PneumaticsModuleType.CTREPCM);
   DoubleSolenoid boost = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0,7);
-  // DoubleSolenoid lock = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1,7);
+  DoubleSolenoid intakeFold = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1,6);
+  DoubleSolenoid climbLock = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 2,5);
+
+
 
   // DoubleSolenoid floats = new DoubleSolenoid(4,3);
   // DoubleSolenoid shield1 = new DoubleSolenoid(6,1);
@@ -72,20 +87,32 @@ public class Robot extends TimedRobot {
  // private double angle = 0;
 
   //public boolean climbUp = false;
-  //control
+  //controlp
   private final XboxController c1 = new XboxController(0);
   private final XboxController c2 = new XboxController(1);
   public double intakeSpeed = 0.0;
   public double climbSpeed = 0.0;
+  public boolean lockState = false;
   public double feederSpeed = 0.0;
   int flyWheelMode = 0;
+  Value intakeFoldState = Value.kReverse;
 
-  Ultrasonic ultrasonic = new Ultrasonic(1, 2); //1 AND 2 correspond to DIO pins
+  public boolean lightOn = false;
+  public double lightValue = 0.0;
+  
+  AnalogInput ultrasonic = new AnalogInput(0);
+  private static final double vtd = 1/0.023 ;
+  // 24 inches ~ 0.57v ~0.024
+  // 36 inches ~ 0.86v ~0.0239
+  // 48 inches ~ 1.02v ~0.0212
 
+  // 0.023 v per inch
 
   // stats toggle the smartdashboard
   boolean stats = true;
 
+
+  Spark led = new Spark(0);
 
 
  //initalize trigger buttons
@@ -96,6 +123,8 @@ public class Robot extends TimedRobot {
 //  final JoystickButton r2 = new JoystickButton(c, 10);
 
 
+  // final Logger logger = Logger.getLogger(this.getClass().getName());
+
   @Override
   public void robotInit() {
     // comp.setClosedLoopControl(false);
@@ -104,16 +133,20 @@ public class Robot extends TimedRobot {
     // lock.set(Value.kReverse);
     //gyro.calibrate();
 
-    boost.set(Value.kReverse);
+    System.out.println("go in");
+    boost.set(Value.kForward);
+    climbLock.set(Value.kReverse);
+    intakeFold.set(Value.kReverse);
+
     flyWheelMotor.set(0);
     climbMotor.set(0);
     intakeMotor.set(intakeSpeed);
 
-
+    
   
     rightMotor.setInverted(true);
 
-    Ultrasonic.setAutomaticMode(true);
+
 
     /**
      * The RestoreFactoryDefaults method can be used to reset the configuration parameters
@@ -121,7 +154,13 @@ public class Robot extends TimedRobot {
      * parameters will not persist between power cycles
      */
     flyWheelMotor.restoreFactoryDefaults();
-  
+
+    //LEDs
+    UsbCamera frontCam = CameraServer.startAutomaticCapture(0);
+    UsbCamera intakeCamera = CameraServer.startAutomaticCapture(1);
+    intakeCamera.setResolution(283,160);
+
+    led.set(0.99);
   
   }
 
@@ -139,6 +178,8 @@ public class Robot extends TimedRobot {
   public void autonomousInit() {
     timer.reset();
     timer.start();
+    climbLock.set(Value.kReverse);
+
   }
 
   private void scoreTaxi(){
@@ -150,24 +191,73 @@ public class Robot extends TimedRobot {
     }
   }
 
-  private void shoot(){
-    if (timer.get() < 5){
-      flyWheelMotor.set(0.3);
+  // private void shoot(){
+  //   if (timer.get() < 5){
+  //     flyWheelMotor.set(0.3);
+  //   }else{
+  //     flyWheelMoultrasonic.get() > tor.stopMotor();
+  //   }
+  // }
+
+  public void scoreHigh(){
+    climbLock.set(Value.kReverse);
+    //fiddle with distance
+    double t = timer.get();
+    if(t < 0.4){
+      // drive back
+      drive.tankDrive(0.6, 0.6);
+    }else if (1 < t && t < 2){
+      drive.stopMotor();
+      flyWheelMotor.set(-0.73);
+    }else if (2 < t && t < 4){
+      feederMotor.set(-0.3);
+    }else if (4 < t && t < 5){
+      flyWheelMotor.stopMotor();
+      feederMotor.stopMotor();
+      
+    }else if (5 < t && t < 6){
+      drive.tankDrive(0.6, 0.6);
+
+    }else{
+      drive.stopMotor();
+    }
+
+  }
+
+  public void scoreHighULTRASONIC(){
+    //fiddle with distance
+    while (ultrasonic.getVoltage()*vtd > 1){
+      // drive back
+      drive.tankDrive(0.6, 0.6);
+    }
+    double t = timer.get();
+    drive.stopMotor();
+    if (1 < t && t < 2){
+      flyWheelMotor.set(0.80);
+    }else if (2 < t && t < 4){
+      feederMotor.set(-0.3);
     }else{
       flyWheelMotor.stopMotor();
+      feederMotor.stopMotor();
+      drive.stopMotor();
     }
+
   }
 
   @Override
   public void autonomousPeriodic() {
     // scoreTaxi();
-    shoot();
+    scoreHigh();
   }
 
   @Override
   public void teleopInit() {
+    climbLock.set(Value.kReverse);
+    //led.set(-0.99);
+
     // gyro.reset();
   }   
+
 
   // double aTarget = 0, bTarget = 0; // a for a button, b for bumpers"
   boolean compressing = false;
@@ -176,17 +266,33 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
+    feederSpeed = 0.0;
+    climbSpeed = 0.0;
+    intakeSpeed = 0.0;
+    intakeFoldState = Value.kReverse;
+    flyWheelMode = 0;
+
+
     // DRIVING SYSTEM
-    double forwardSpeed = c1.getLeftY();
-    double turnSpeed = c1.getLeftX();
+    double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
+    double turnSpeed = c1.getLeftX() + c1.getRightX()*0.5;
+
+    if (forwardSpeed > 1)
+      forwardSpeed = 1;
+
+    if (turnSpeed > 1)
+      turnSpeed = 1;
+
+
+    
 
     // DO NOT TOUCH
     drive.arcadeDrive(forwardSpeed, -turnSpeed, true); // DO NOT TOUCH
     // DO NOT TOUCH ^
 
 
-    if(c1.getBButtonPressed()) // toggle sprint
-      boost.toggle();
+    // if(c1.getBButtonPressed()) // B for boost
+    //   boost.toggle();
 
 
     // INTAKE SYSTEM |   CONTROLLER 2 right trigger suck, left trigger spit
@@ -195,62 +301,118 @@ public class Robot extends TimedRobot {
     double rightTrigger = c2.getRightTriggerAxis();
     double leftTrigger = c2.getLeftTriggerAxis();
 
-    intakeSpeed = 0.0;
     if(rightTrigger > 0){
       intakeSpeed = rightTrigger;
+      feederSpeed = -0.45;
     }else if (leftTrigger > 0){
       intakeSpeed = -leftTrigger;
     }
 
-
+    if(c2.getLeftTriggerAxis() > 0)
+      intakeFoldState = Value.kForward; 
 
     // FEEDER SYSTEM |   CONTROLLER 2 y & a hold down to spin
 
     
     
+    
     if (c2.getAButton()){
       // activiate right trigger
-      feederSpeed = 0.5;
+      feederSpeed = -0.3;
     }else if (c2.getYButton()){
-      feederSpeed = -0.5;
-    } else{
-      feederSpeed = 0.0;
+      feederSpeed = 0.4;
     }
+
+
+
+    if(c1.getBButton())
+    {
+      lightOn = false;
+      lightValue = 0.99;
+    }
+
+    if(c1.getAButton())
+    {
+      lightValue = 0.77;
+      lightOn = true;
+    }
+
+    if(c1.getYButton())
+    {
+      lightValue = -0.99;
+    }
+
+
+
+    led.set(lightValue);
+
 
 
     // FLYWHEEL SYSTEM |  CONTROLLER 2 controlled by bumpers, RIGHT BUMPER increment speed, capped at highest speed, LEFT BUMPER reset speed to 0
 
     
-    double[] flyWheelSpeeds = {0.0, 0.5, 0.85}; // speeds when driving around, low goal, and high goal
+    // double[] flyWheelSpeeds = {0.0, 0.5, 0.75}; // speeds when driving around, low goal, and high goal
+    // // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
+    // if(c2.getRightBumperPressed() && flyWheelMode < 2) // increment flywhell speed when right bumper pressed
+    //   flyWheelMode++;
+    // if(c2.getLeftBumperPressed())
+    //   flyWheelMode = 0;
+
+    double[] flyWheelSpeeds = {0.0, 0.45, 0.95}; // speeds when driving around, low goal, and high goal
     // controls flywheel speed, lower speed is 10% speed, max speed is 100% speed
-    if(c2.getRightBumperPressed() && flyWheelMode < 2) // increment flywhell speed when right bumper pressed
-      flyWheelMode++;
-    if(c2.getLeftBumperPressed())
-      flyWheelMode = 0;
+    if(c2.getRightBumper()) // increment flywhell speed when right bumper pressed
+      flyWheelMode = 2;
+    if(c2.getLeftBumper())
+      flyWheelMode = 1;
     
     
-    // CLIMBER SYSTEM |   CONTROLLER 1 controlled by Y & A
     
-    climbSpeed = 0.0;
-    if(c1.getYButton()) // up
-      climbSpeed = 0.8;
-    if(c1.getAButton()) // down
-      climbSpeed = -0.6;
-
-
+    // CLIMBER SYSTEM |   CONTROLLER 1 controlled by Y & A, press 
     
-
-
-    if(ultrasonic.getRangeMM()>2000)
+    if(lockState == false)
     {
-      //LIGHTS ARE GREEN
+      if(c1.getRightTriggerAxis() > 0) // up
+        climbSpeed = 0.8;
+      else if(c1.getLeftTriggerAxis() > 0) // down
+        climbSpeed = -0.6;
     }
+
+    if (c1.getXButtonPressed())
+    {
+      lockState = !lockState;
+      climbLock.toggle();
+
+    }
+
+    
+
+     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
+    // if(50 <= ultrasonicDist && ultrasonicDist <= 62)
+
+    //   //LIGHTS ARE GREEN
+    //   // System.out.println("in range");
+    //   led.set (0.77);
+    // }else if(42 <= ultrasonicDist && ultrasonicDist <= 70){ // 8 up 8 down range, for when we are apporaching shooting range
+    //   // set to flashing orange
+
+    //   led.set(0.65);
+    // }else if(1000 <= ultrasonicDist && ultrasonicDist <= -1){ // low goal zone
+    //   // to be implemented
+    //   led.set(0.57);
+    // }else{
+    //   led.set(-0.99);
+    //   // System.out.println("NOT IN RANGE NOT IN RANGE");
+    // }
 
     // if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
       // lock.set(Value.kForward);
 
     if (stats){
       SmartDashboard.putNumber("Flywheel Encoder", flyWheelEncoder.getVelocity());
+      SmartDashboard.putNumber("Ultrasonic Distance", ultrasonicDist);
+      SmartDashboard.putBoolean("Climb Lock Activated", lockState);
+      SmartDashboard.putNumber("Ultrasonic Voltage", ultrasonic.getVoltage());
+      SmartDashboard.putNumber("Ultrasonic Distance", ultrasonic.getVoltage()*vtd);
     }
 
     intakeMotor.set(intakeSpeed); // PWM 
@@ -258,7 +420,15 @@ public class Robot extends TimedRobot {
     flyWheelMotor.set(-flyWheelSpeeds[flyWheelMode]); //CAN
     intakeMotor.set(intakeSpeed); //PWM
     climbMotor.set(climbSpeed); //PWM
+
+    intakeFold.set(intakeFoldState); // pneumatics
+
+
+    
+    System.out.println(lightValue);
   }
+
+
 
   @Override
   public void disabledInit() {}
@@ -272,3 +442,5 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {}
 }
+
+
