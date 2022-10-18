@@ -196,7 +196,7 @@ public class Robot extends TimedRobot {
    if (timer.get() < 5){
       flyWheelMotor.set(0.3);
     }else{
-      flyWheelMoultrasonic.get() > tor.stopMotor();
+      //ultrasonic.get() > tor.stopMotor();
     }
   }
   //]
@@ -277,7 +277,7 @@ public class Robot extends TimedRobot {
 
     // DRIVING SYSTEM
     double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
-    double turnSpeed = c1.getLeftX() + c1.getRightX()*0.5;
+    double turnSpeed = c1.getLeftX()*.75 + c1.getRightX()*0.67;
 
     if (forwardSpeed > 1)
       forwardSpeed = 1;
@@ -391,7 +391,7 @@ public class Robot extends TimedRobot {
      double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
 
-    //privously commented out[
+    //previously commented out[
     if(50 <= ultrasonicDist && ultrasonicDist <= 62){
       //LIGHTS ARE GREEN
       // System.out.println("in range");
