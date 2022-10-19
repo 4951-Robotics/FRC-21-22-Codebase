@@ -71,9 +71,9 @@ public class Robot extends TimedRobot {
 
   //Pneumatics
   Compressor comp = new Compressor(0, PneumaticsModuleType.CTREPCM);
-  DoubleSolenoid boost = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0,7);
-  DoubleSolenoid intakeFold = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1,6);
-  DoubleSolenoid climbLock = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 2,5);
+  DoubleSolenoid boost = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 0, 7);
+  DoubleSolenoid intakeFold = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 6);
+  DoubleSolenoid climbLock = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 2, 5);
 
 
 
@@ -111,7 +111,7 @@ public class Robot extends TimedRobot {
   // stats toggle the smartdashboard
   boolean stats = true;
 
-
+  //LED init
   Spark led = new Spark(0);
 
 
@@ -155,7 +155,7 @@ public class Robot extends TimedRobot {
      */
     flyWheelMotor.restoreFactoryDefaults();
 
-    //LEDs
+    //LED and Cam
     UsbCamera frontCam = CameraServer.startAutomaticCapture(0);
     UsbCamera intakeCamera = CameraServer.startAutomaticCapture(1);
     intakeCamera.setResolution(283,160);
@@ -191,7 +191,7 @@ public class Robot extends TimedRobot {
     }
   }
 
-  //previously commented out[
+  /* Not Used?
   private void shoot(){
    if (timer.get() < 5){
       flyWheelMotor.set(0.3);
@@ -199,7 +199,7 @@ public class Robot extends TimedRobot {
       //ultrasonic.get() > tor.stopMotor();
     }
   }
-  //]
+  */
 
   public void scoreHigh(){
     climbLock.set(Value.kReverse);
@@ -216,14 +216,11 @@ public class Robot extends TimedRobot {
     }else if (4 < t && t < 5){
       flyWheelMotor.stopMotor();
       feederMotor.stopMotor();
-      
     }else if (5 < t && t < 6){
       drive.tankDrive(0.6, 0.6);
-
     }else{
       drive.stopMotor();
     }
-
   }
 
   public void scoreHighULTRASONIC(){
@@ -255,7 +252,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     climbLock.set(Value.kReverse);
-    //led.set(-0.99);
+    led.set(-0.99);
 
     // gyro.reset();
   }   
@@ -297,7 +294,7 @@ public class Robot extends TimedRobot {
     //   boost.toggle();
 
 
-    // INTAKE SYSTEM |   CONTROLLER 2 right trigger suck, left trigger spit
+    // INTAKE SYSTEM |   CONTROLLER 2 right trigger sucks balls, left trigger spits balls
 
   
     double rightTrigger = c2.getRightTriggerAxis();
@@ -310,14 +307,11 @@ public class Robot extends TimedRobot {
       intakeSpeed = -leftTrigger;
     }
 
-    if(c2.getLeftTriggerAxis() > 0)
+    if(c2.getLeftTriggerAxis() > 0){
       intakeFoldState = Value.kForward; 
-
+    }
+    
     // FEEDER SYSTEM |   CONTROLLER 2 y & a hold down to spin
-
-    
-    
-    
     if (c2.getAButton()){
       // activiate right trigger
       feederSpeed = -0.3;
@@ -343,9 +337,6 @@ public class Robot extends TimedRobot {
     {
       lightValue = -0.99;
     }
-
-
-
     led.set(lightValue);
 
 
@@ -383,7 +374,6 @@ public class Robot extends TimedRobot {
     {
       lockState = !lockState;
       climbLock.toggle();
-
     }
 
     
@@ -398,7 +388,6 @@ public class Robot extends TimedRobot {
       led.set (0.77);
     }else if(42 <= ultrasonicDist && ultrasonicDist <= 70){ // 8 up 8 down range, for when we are apporaching shooting range
       // set to flashing orange
-
       led.set(0.65);
     }else if(1000 <= ultrasonicDist && ultrasonicDist <= -1){ // low goal zone
       // to be implemented
