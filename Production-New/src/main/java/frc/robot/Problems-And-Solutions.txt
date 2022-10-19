@@ -1,0 +1,12 @@
+Encountered problems can be noted on this doc, if it has been solved, please also note solutions
+
+shoot() has been commented out again, not used
+ScoreHigh looks kina sus ngl
+ScoreHighUltrasonic() not used?
+ScoreHighUltrasonic() and ScoreHigh() have different flywheel values?
+TeleopInit() led code uncommented
+what is boost and what it do?
+Gyro still commented out
+why does controller 1 seem like they can change led light value?
+Test values for low goal zone so LED can be set
+Other problems/questions have not been noticed and noted here
