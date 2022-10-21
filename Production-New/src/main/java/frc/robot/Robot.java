@@ -87,7 +87,7 @@ public class Robot extends TimedRobot {
  // private double angle = 0;
 
   //public boolean climbUp = false;
-  //controlp
+  //control
   private final XboxController c1 = new XboxController(0);
   private final XboxController c2 = new XboxController(1);
   public double intakeSpeed = 0.0;
@@ -153,6 +153,8 @@ public class Robot extends TimedRobot {
      * in the SPARK MAX to their factory default state. If no argument is passed, these
      * parameters will not persist between power cycles
      */
+
+    
     flyWheelMotor.restoreFactoryDefaults();
 
     //LED and Cam
@@ -384,7 +386,7 @@ public class Robot extends TimedRobot {
     //previously commented out[
     if(50 <= ultrasonicDist && ultrasonicDist <= 62){
       //LIGHTS ARE GREEN
-      // System.out.println("in range");
+      System.out.println("in range");
       led.set (0.77);
     }else if(42 <= ultrasonicDist && ultrasonicDist <= 70){ // 8 up 8 down range, for when we are apporaching shooting range
       // set to flashing orange
@@ -437,5 +439,4 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {}
 }
-
 
