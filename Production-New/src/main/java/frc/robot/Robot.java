@@ -67,7 +67,6 @@ public class Robot extends TimedRobot {
   PWMVictorSPX climbMotor = new PWMVictorSPX(4); // This is correct
   // PWMVictorSPX feederMotor = new PWMVictorSPX(5);
 
-  
 
   //Pneumatics
   Compressor comp = new Compressor(0, PneumaticsModuleType.CTREPCM);
@@ -313,7 +312,7 @@ public class Robot extends TimedRobot {
       intakeFoldState = Value.kForward; 
     }
     
-    // FEEDER SYSTEM |   CONTROLLER 2 y & a hold down to spin
+    // FEEDER SYSTEM |   CONTROLLER 2 triangle(y) & X(a) hold down to spin
     if (c2.getAButton()){
       // activiate right trigger
       feederSpeed = -0.3;
@@ -322,7 +321,7 @@ public class Robot extends TimedRobot {
     }
 
 
-
+    //why can they change light value tho?
     if(c1.getBButton())
     {
       lightOn = false;
@@ -379,11 +378,19 @@ public class Robot extends TimedRobot {
     }
 
     
+    //Turns 180
+    if(c1.getBButtonPressed()){
+      final double time = timer.get();//start time(button pressed)
+      double cur = timer.get();//current time
+      final double period = 0.5;//max turn time
+      while(cur-period!=time){
+        //use gyro
+      }
+    }
 
-     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
+    double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
-
-    //previously commented out[
+    
     if(50 <= ultrasonicDist && ultrasonicDist <= 62){
       //LIGHTS ARE GREEN
       System.out.println("in range");
@@ -398,7 +405,6 @@ public class Robot extends TimedRobot {
       led.set(-0.99);
       // System.out.println("NOT IN RANGE NOT IN RANGE");
     }
-    //]
 
 
     // if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
@@ -411,6 +417,7 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Ultrasonic Voltage", ultrasonic.getVoltage());
       SmartDashboard.putNumber("Ultrasonic Distance", ultrasonic.getVoltage()*vtd);
     }
+
 
     intakeMotor.set(intakeSpeed); // PWM 
     feederMotor.set(feederSpeed); // CAN
