@@ -82,8 +82,8 @@ public class Robot extends TimedRobot {
 
   //data
   private final Timer timer = new Timer();
-  //private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
- // private double angle = 0;
+  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+  // private double angle = 0;
 
   //public boolean climbUp = false;
   //control
@@ -130,7 +130,7 @@ public class Robot extends TimedRobot {
     // arm.set(Value.kForward);
     
     // lock.set(Value.kReverse);
-    //gyro.calibrate();
+    gyro.calibrate();
 
     System.out.println("go in");
     boost.set(Value.kForward);
@@ -377,17 +377,21 @@ public class Robot extends TimedRobot {
       climbLock.toggle();
     }
 
-    
-    //Turns 180
+    gryo.reset();//deletable(I think), just resets current direction to 0 degrees
+    //Turns 180 with Controller 1 B button
     if(c1.getBButtonPressed()){
       final double time = timer.get();//start time(button pressed)
       double cur = timer.get();//current time
       final double period = 0.5;//max turn time
+      final double An = gryo.getAngle();
       while(cur-period!=time){
+        curAn = gyro.getAngle();
         //use gyro
+        if(curAn-180!=An||curAn+180!=An){
+          drive.tankDrive(1, 1);
+        }
       }
     }
-
     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
     
