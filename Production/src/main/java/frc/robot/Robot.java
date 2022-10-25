@@ -275,7 +275,7 @@ public class Robot extends TimedRobot {
 
     // DRIVING SYSTEM
     double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
-    double turnSpeed = c1.getLeftX() + c1.getRightX()*0.5;
+    double turnSpeed = c1.getLeftX()*0.75 + c1.getRightX()*0.67;
 
     if (forwardSpeed > 1)
       forwardSpeed = 1;
