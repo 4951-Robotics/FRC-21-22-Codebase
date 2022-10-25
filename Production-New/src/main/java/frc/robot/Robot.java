@@ -130,7 +130,7 @@ public class Robot extends TimedRobot {
     // arm.set(Value.kForward);
     
     // lock.set(Value.kReverse);
-    gyro.calibrate();
+    //gyro.calibrate();
 
     System.out.println("go in");
     boost.set(Value.kForward);
@@ -275,7 +275,7 @@ public class Robot extends TimedRobot {
 
     // DRIVING SYSTEM
     double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
-    double turnSpeed = c1.getLeftX()*.75 + c1.getRightX()*0.67;
+    double turnSpeed = c1.getLeftX() + c1.getRightX()*0.5;
 
     if (forwardSpeed > 1)
       forwardSpeed = 1;
@@ -320,7 +320,7 @@ public class Robot extends TimedRobot {
       feederSpeed = 0.4;
     }
 
-
+/*
     //why can they change light value tho?
     if(c1.getBButton())
     {
@@ -340,7 +340,7 @@ public class Robot extends TimedRobot {
     }
     led.set(lightValue);
 
-
+*/
 
     // FLYWHEEL SYSTEM |  CONTROLLER 2 controlled by bumpers, RIGHT BUMPER increment speed, capped at highest speed, LEFT BUMPER reset speed to 0
 
@@ -377,39 +377,44 @@ public class Robot extends TimedRobot {
       climbLock.toggle();
     }
 
-    gryo.reset();//deletable(I think), just resets current direction to 0 degrees
+    //gyro.reset();
+    //deletable(I think), just resets current direction to 0 degrees
     //Turns 180 with Controller 1 B button
+    /*
     if(c1.getBButtonPressed()){
       final double time = timer.get();//start time(button pressed)
       double cur = timer.get();//current time
       final double period = 0.5;//max turn time
-      final double An = gryo.getAngle();
+      final double An = gyro.getAngle();
       while(cur-period!=time){
-        curAn = gyro.getAngle();
+        double curAn = gyro.getAngle();
         //use gyro
         if(curAn-180!=An||curAn+180!=An){
           drive.tankDrive(1, 1);
         }
       }
     }
+    */
     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
     
     if(50 <= ultrasonicDist && ultrasonicDist <= 62){
       //LIGHTS ARE GREEN
       System.out.println("in range");
-      led.set (0.77);
-    }else if(42 <= ultrasonicDist && ultrasonicDist <= 70){ // 8 up 8 down range, for when we are apporaching shooting range
+      lightValue = 0.99;
+    }else if(42 <= ultrasonicDist&&ultrasonicDist<50){ // 8 up 8 down range, for when we are apporaching shooting range
       // set to flashing orange
-      led.set(0.65);
+      lightValue = 0.65;
+    }else if(63<ultrasonicDist&&ultrasonicDist <= 70){
+      lightValue = 0.25;
     }else if(1000 <= ultrasonicDist && ultrasonicDist <= -1){ // low goal zone
       // to be implemented
-      led.set(0.57);
+      lightValue = 0.57;
     }else{
-      led.set(-0.99);
+      lightValue = -0.99;
       // System.out.println("NOT IN RANGE NOT IN RANGE");
     }
-
+    led.set(lightValue);
 
     // if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
       // lock.set(Value.kForward);
