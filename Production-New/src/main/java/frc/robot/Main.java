@@ -21,8 +21,8 @@ public final class Main {
    */
   public static void main(String... args) {
 
-    //Robot is "new" code, OldRobot is FRC last tournament code, comment out the one not needed
-    RobotBase.startRobot(Robot::new);
-    //RobotBase.startRobot(OldRobot::new);
+    //Robot is new/exprimental code, OldRobot is always the one that has been proven to work
+    //RobotBase.startRobot(Robot::new);
+    RobotBase.startRobot(OldRobot::new);
   }
 }

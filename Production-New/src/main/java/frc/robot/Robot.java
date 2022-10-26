@@ -111,6 +111,8 @@ public class Robot extends TimedRobot {
   boolean stats = true;
 
   //LED init
+  //https://docs.wpilib.org/en/stable/docs/software/hardware-apis/misc/addressable-leds.html
+  //shouldn't we be using an actually led port and correct initializer?
   Spark led = new Spark(0);
 
 
@@ -275,7 +277,7 @@ public class Robot extends TimedRobot {
 
     // DRIVING SYSTEM
     double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
-    double turnSpeed = c1.getLeftX() + c1.getRightX()*0.5;
+    double turnSpeed = c1.getLeftX()*0.75 + c1.getRightX()*0.67;
 
     if (forwardSpeed > 1)
       forwardSpeed = 1;
@@ -401,7 +403,7 @@ public class Robot extends TimedRobot {
     if(50 <= ultrasonicDist && ultrasonicDist <= 62){
       //LIGHTS ARE GREEN
       System.out.println("in range");
-      lightValue = 0.99;
+      lightValue = 0.77;
     }else if(42 <= ultrasonicDist&&ultrasonicDist<50){ // 8 up 8 down range, for when we are apporaching shooting range
       // set to flashing orange
       lightValue = 0.65;
