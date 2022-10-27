@@ -41,7 +41,7 @@ import edu.wpi.first.cscore.UsbCamera;
 
 
 
-public class Robot extends TimedRobot {
+public class OldRobot extends TimedRobot {
 
   //Motors
   // TalonSRX talonLeft = new TalonSRX(5);

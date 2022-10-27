@@ -111,8 +111,7 @@ public class Robot extends TimedRobot {
   boolean stats = true;
 
   //LED init
-  //https://docs.wpilib.org/en/stable/docs/software/hardware-apis/misc/addressable-leds.html
-  //shouldn't we be using an actually led port and correct initializer?
+  //https://www.revrobotics.com/content/docs/REV-11-1105-UM.pdf pg 14
   Spark led = new Spark(0);
 
 
@@ -132,7 +131,7 @@ public class Robot extends TimedRobot {
     // arm.set(Value.kForward);
     
     // lock.set(Value.kReverse);
-    //gyro.calibrate();
+    gyro.calibrate();
 
     System.out.println("go in");
     boost.set(Value.kForward);
@@ -268,6 +267,8 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
+    System.out.println(gyro.getAngle());
+
     feederSpeed = 0.0;
     climbSpeed = 0.0;
     intakeSpeed = 0.0;
@@ -277,7 +278,7 @@ public class Robot extends TimedRobot {
 
     // DRIVING SYSTEM
     double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
-    double turnSpeed = c1.getLeftX()*0.75 + c1.getRightX()*0.67;
+    double turnSpeed = c1.getLeftX()*0.75 + c1.getRightX()*0.5;
 
     if (forwardSpeed > 1)
       forwardSpeed = 1;
@@ -379,24 +380,26 @@ public class Robot extends TimedRobot {
       climbLock.toggle();
     }
 
-    //gyro.reset();
+    gyro.reset();
     //deletable(I think), just resets current direction to 0 degrees
     //Turns 180 with Controller 1 B button
-    /*
+    
     if(c1.getBButtonPressed()){
-      final double time = timer.get();//start time(button pressed)
+      timer.reset();
+      timer.start();
       double cur = timer.get();//current time
       final double period = 0.5;//max turn time
-      final double An = gyro.getAngle();
-      while(cur-period!=time){
+      gyro.reset();
+      //or this: final double An = gyro.getAngle();
+      while(cur-period==0){
         double curAn = gyro.getAngle();
         //use gyro
-        if(curAn-180!=An||curAn+180!=An){
-          drive.tankDrive(1, 1);
+        if(curAn-180!=0||curAn+180!=0){
+          drive.tankDrive(1, -1);
         }
       }
     }
-    */
+    
     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
     
@@ -408,7 +411,8 @@ public class Robot extends TimedRobot {
       // set to flashing orange
       lightValue = 0.65;
     }else if(63<ultrasonicDist&&ultrasonicDist <= 70){
-      lightValue = 0.25;
+      //violet
+      lightValue = 0.91;
     }else if(1000 <= ultrasonicDist && ultrasonicDist <= -1){ // low goal zone
       // to be implemented
       lightValue = 0.57;
