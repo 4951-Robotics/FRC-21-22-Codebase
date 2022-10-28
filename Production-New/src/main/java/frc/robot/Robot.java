@@ -380,47 +380,46 @@ public class Robot extends TimedRobot {
       climbLock.toggle();
     }
 
-    gyro.reset();
-    //deletable(I think), just resets current direction to 0 degrees
     //Turns 180 with Controller 1 B button
-    
     if(c1.getBButtonPressed()){
       timer.reset();
       timer.start();
-      double cur = timer.get();//current time
-      final double period = 0.5;//max turn time
       gyro.reset();
+      double curT = timer.get();//current time
+      double curAn = gyro.getAngle();//current angle
+      final double period = 0.5;//max turn time
       //or this: final double An = gyro.getAngle();
-      while(cur-period==0){
-        double curAn = gyro.getAngle();
+      while(curT-period<=0){
+        curAn = gyro.getAngle();
+        curT = timer.get();
         //use gyro
-        if(curAn-180!=0||curAn+180!=0){
+        if(curAn-180<0||curAn+180>0){
           drive.tankDrive(1, -1);
+        } else{
+          drive.stopMotor();
+          break;
         }
       }
     }
     
     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
-    
-    if(50 <= ultrasonicDist && ultrasonicDist <= 62){
+    if(ultrasonicDist<42){
+      led.set(-0.99);
+    } else if(ultrasonicDist<50){
+      // set to flashing orange
+      led.set(0.65);
+    }else if(ultrasonicDist <= 62){
       //LIGHTS ARE GREEN
       System.out.println("in range");
-      lightValue = 0.77;
-    }else if(42 <= ultrasonicDist&&ultrasonicDist<50){ // 8 up 8 down range, for when we are apporaching shooting range
-      // set to flashing orange
-      lightValue = 0.65;
-    }else if(63<ultrasonicDist&&ultrasonicDist <= 70){
+      led.set(0.77);
+    }else if(ultrasonicDist <= 70){
       //violet
-      lightValue = 0.91;
-    }else if(1000 <= ultrasonicDist && ultrasonicDist <= -1){ // low goal zone
-      // to be implemented
-      lightValue = 0.57;
-    }else{
-      lightValue = -0.99;
+      led.set(0.91);
+    } else{
+      led.set(-0.99);
       // System.out.println("NOT IN RANGE NOT IN RANGE");
     }
-    led.set(lightValue);
 
     // if(c.getLeftBumperPressed()) // decrement flywheel speed when left bumper pressed.
       // lock.set(Value.kForward);
