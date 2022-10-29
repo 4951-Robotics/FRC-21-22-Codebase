@@ -41,7 +41,7 @@ import edu.wpi.first.cscore.UsbCamera;
 
 
 
-public class Robot extends TimedRobot {
+public class RobotWithNewUltrasonic extends TimedRobot {
 
   //Motors
   // TalonSRX talonLeft = new TalonSRX(5);
@@ -99,7 +99,7 @@ public class Robot extends TimedRobot {
   public boolean lightOn = false;
   public double lightValue = 0.0;
   
-  AnalogInput ultrasonic = new AnalogInput(0);
+  Ultrasonic ultrasonic = new Ultrasonic(1, 2);//not sure if this correct
   private static final double vtd = 1/0.023 ;
   // 24 inches ~ 0.57v ~0.024
   // 36 inches ~ 0.86v ~0.0239
@@ -227,7 +227,7 @@ public class Robot extends TimedRobot {
 
   public void scoreHighULTRASONIC(){
     //fiddle with distance
-    while (ultrasonic.getVoltage()*vtd > 1){
+    while (ultrasonic.getRangeInches() > 1){//this is like so wrong btw
       // drive back
       drive.tankDrive(0.6, 0.6);
     }
@@ -409,18 +409,18 @@ public class Robot extends TimedRobot {
       }
     }
     
-    double ultrasonicDist = ultrasonic.getVoltage()*vtd;
+    double ultrasonicDist = ultrasonic.getRangeInches();
     
-    if(ultrasonicDist<42){
+    if(ultrasonicDist<1){//42*0.023
       led.set(-0.99);
-    } else if(ultrasonicDist<50){
+    } else if(ultrasonicDist<1.15){//50*0.023
       // set to flashing orange
       led.set(0.65);
-    }else if(ultrasonicDist <= 62){
+    }else if(ultrasonicDist <= 1.45){//62*0.023
       //LIGHTS ARE GREEN
       System.out.println("in range");
       led.set(0.77);
-    }else if(ultrasonicDist <= 70){
+    }else if(ultrasonicDist <=1.6){//70*0.023
       //violet
       led.set(0.91);
     } else{
@@ -435,8 +435,7 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Flywheel Encoder", flyWheelEncoder.getVelocity());
       SmartDashboard.putNumber("Ultrasonic Distance", ultrasonicDist);
       SmartDashboard.putBoolean("Climb Lock Activated", lockState);
-      SmartDashboard.putNumber("Ultrasonic Voltage", ultrasonic.getVoltage());
-      SmartDashboard.putNumber("Ultrasonic Distance", ultrasonic.getVoltage()*vtd);
+      SmartDashboard.putNumber("Ultrasonic Distance Inches", ultrasonic.getRangeInches());
     }
 
 
