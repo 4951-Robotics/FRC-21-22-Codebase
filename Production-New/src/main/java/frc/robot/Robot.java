@@ -82,8 +82,8 @@ public class Robot extends TimedRobot {
 
   //data
   private final Timer timer = new Timer();
-  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
-  // private double angle = 0;
+  //private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+  //private double angle = 0;
 
   //public boolean climbUp = false;
   //control
@@ -131,7 +131,7 @@ public class Robot extends TimedRobot {
     // arm.set(Value.kForward);
     
     // lock.set(Value.kReverse);
-    gyro.calibrate();
+    //gyro.calibrate();
 
     System.out.println("go in");
     boost.set(Value.kForward);
@@ -267,7 +267,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    System.out.println(gyro.getAngle());
+    //System.out.println(gyro.getAngle());
 
     feederSpeed = 0.0;
     climbSpeed = 0.0;
@@ -278,7 +278,7 @@ public class Robot extends TimedRobot {
 
     // DRIVING SYSTEM
     double forwardSpeed = c1.getLeftY() + c1.getRightY()*0.5;
-    double turnSpeed = c1.getLeftX()*0.75 + c1.getRightX()*0.5;
+    double turnSpeed = c1.getLeftX()*0.75 + c1.getRightX()*0.67;
 
     if (forwardSpeed > 1)
       forwardSpeed = 1;
@@ -379,7 +379,7 @@ public class Robot extends TimedRobot {
       lockState = !lockState;
       climbLock.toggle();
     }
-
+    /*
     //Turns 180 with Controller 1 B button
     if(c1.getBButtonPressed()){
       timer.reset();
@@ -401,6 +401,7 @@ public class Robot extends TimedRobot {
         }
       }
     }
+    */
     
     double ultrasonicDist = ultrasonic.getVoltage()*vtd;
     
